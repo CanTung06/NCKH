@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Đường dẫn 2 file
-file1 = "scam_sms_dataset.csv"
-file2 = "scam_sms_dataset(1).csv"
+file1 = "../../data/raw/scam_sms_dataset.csv"
+file2 = "../../data/raw/scam_sms_dataset(1).csv"
 
 # Đọc 2 file
 df1 = pd.read_csv(file1)

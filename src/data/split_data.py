@@ -7,7 +7,7 @@ from pathlib import Path
 # 1. Đường dẫn
 # =========================
 
-input_file = Path("../../data/raw/dataset.csv")
+input_file = Path("../../data/processed/dataset.csv")
 output_dir = Path("../../data/split")
 
 # Tạo thư mục split nếu chưa có
