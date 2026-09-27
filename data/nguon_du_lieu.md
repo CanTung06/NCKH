@@ -1,16 +1,24 @@
 # Nguồn dữ liệu — AI Cảnh báo Lừa đảo cho người Việt
 
 Dự án gồm **2 file**:
-- `scam_dataset.jsonl` — toàn bộ dữ liệu huấn luyện (1 file duy nhất)
+- `scam_dataset.csv` — toàn bộ dữ liệu huấn luyện (1 file CSV duy nhất, đã chuẩn hóa)
 - `nguon_du_lieu.md` — file này (liệt kê nguồn + link)
 
-## 1. File dữ liệu: `scam_dataset.jsonl`
+## 1. File dữ liệu: `scam_dataset.csv`
 
-Mỗi dòng 1 JSON, đã khử trùng lặp (MD5 trên text chuẩn hóa) và xáo trộn seed=42:
+Chuyển từ JSONL gốc sang CSV và chuẩn hóa bằng `scripts/to_csv_normalize.py`
+(Unicode NFC, dọn khoảng trắng, khử trùng lặp MD5, mã hóa nhãn). Các cột:
 
-```json
-{"text": "...", "label": "...", "channel": "...", "language": "vi", "source": "..."}
-```
+| Cột | Ý nghĩa |
+|---|---|
+| `id` | MD5 của text chuẩn hóa (khóa khử trùng lặp) |
+| `label` | `scam` / `legitimate` / `spam` / `fake_news` / `reference` |
+| `label_id` | 0=fake_news, 1=legitimate, 2=reference, 3=scam, 4=spam |
+| `is_scam` | 1=scam, 0=còn lại (bài toán nhị phân) |
+| `channel` | `sms` / `social_post` / `news` |
+| `text` | Nội dung tin nhắn/bài đăng (tiếng Việt, giữ nguyên dấu) |
+| `char_len`, `word_len` | Độ dài text (ký tự / từ) |
+| `note` | Ghi chú gốc (nếu có) |
 
 | Nhãn | Ý nghĩa | Số lượng |
 |---|---|---|
@@ -22,12 +30,15 @@ Mỗi dòng 1 JSON, đã khử trùng lặp (MD5 trên text chuẩn hóa) và x�
 
 Kênh (`channel`): `sms` 21,515 · `social_post` 4,281 · `news` 33. **Tổng: 25,829 bản ghi, 100% tiếng Việt.**
 
-Chia train/val/test khi huấn luyện (tự chia, seed=42):
+Đọc dữ liệu và chia train/val/test khi huấn luyện:
 ```python
-import json, random
-rows = [json.loads(l) for l in open(r"D:\nckh\data\scam_dataset.jsonl", encoding="utf-8")]
-random.seed(42); random.shuffle(rows)
-n = len(rows); train, val, test = rows[:int(n*.8)], rows[int(n*.8):int(n*.9)], rows[int(n*.9):]
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+df = pd.read_csv(r"D:\nckh\NCKH\data\scam_dataset.csv", encoding="utf-8-sig")
+X, y = df["text"], df["label_id"]          # hoặc df["is_scam"] cho bài toán nhị phân
+X_tr, X_tmp, y_tr, y_tmp = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+X_val, X_te, y_val, y_te = train_test_split(X_tmp, y_tmp, test_size=0.5, random_state=42, stratify=y_tmp)
 ```
 
 ## 2. Nguồn đã dùng trong `scam_dataset.jsonl`
